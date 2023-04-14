@@ -41,11 +41,12 @@ app.post('/',(req,res)=>{
     })
     try {
         const dataToSave = data.save();
-        res.status(200).json(dataToSave)
+        res.send("Ideas Submitted succesfully")
     }
     catch (error) {
         res.status(400).json({message: error.message})
     }
+    
 })
 
 app.get('/user/getIdeas', async (req, res) => {
