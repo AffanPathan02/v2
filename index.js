@@ -1,43 +1,61 @@
 const express=require('express')
 const bodyParser=require('body-parser')
-const mysql = require('mysql');
+const mongoose = require('mongoose');
 const path=require('path')
+const Model=require('./models/model')
+require('dotenv').config()
 
 const PORT=3000 || process.env.PORT
-
-const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'yourpassword',
-    database: "ExpressIntegration"       
-  });
-   
-  // open the MySQL connection
-  connection.connect(error => {
-      if (error){
-          console.log("A error has been occurred "
-              + "while connecting to database.");       
-          throw error;
-      }
-       
-      //If Everything goes correct, Then start Express Server
-      app.listen(PORT, ()=>{
-          console.log("Database connection is Ready and "
-               + "Server is Listening on Port ", PORT);
-      })
-  });
+const mongoString=process.env.DATABASE_URL
 
 const app=express()
 
+mongoose.connect(mongoString);
+const database = mongoose.connection;
+
+database.on('error', (error) => {
+    console.log(error)
+})
+
+database.once('connected', () => {
+    console.log('Database Connected');
+})
+
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.static(__dirname))
+app.use(express.json())
 
 app.get('/',(req,res)=>{
     res.sendFile(path.join(__dirname, '/src/index.html'));
 })
 
 app.post('/',(req,res)=>{
-    console.log(req.body)
+    const params=req.body
+    const data = new Model({
+        name: params.name,
+        socials: params.socials,
+        email:params.email,
+        category:params.category,
+        title:params.title,
+        description:params.description
+    })
+    try {
+        const dataToSave = data.save();
+        res.status(200).json(dataToSave)
+    }
+    catch (error) {
+        res.status(400).json({message: error.message})
+    }
+})
+
+app.get('/user/getIdeas', async (req, res) => {
+    try{
+        const data = await Model.find();
+        res.json(data)
+    }
+    catch(error){
+        res.status(500).json({message: error.message})
+    }
 })
 
 app.listen(PORT,(req,res)=>{
